@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+   spark:
+      image: jupyter/all-spark-notebook
+      volumes: 
+        - ../data:/home/jovyan/work
+      ports:
+        - 8888:8888
+   postgres_db:
+      image: postgres
+      ports:
+        - 5432:5432
+      environment:
+         POSTGRES_DB: spark_ex
+         POSTGRES_PASSWORD: postgres
+      volumes:
+         - ../data/psql:/var/lib/postgresql/data
+         - ../data/dbscripts:/docker-entrypoint-initdb.d
