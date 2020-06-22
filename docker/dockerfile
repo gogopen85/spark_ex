@@ -1,0 +1,76 @@
+# Copyright (c) Jupyter Development Team.
+# Distributed under the terms of the Modified BSD License.
+ARG BASE_CONTAINER=jupyter/pyspark-notebook
+FROM $BASE_CONTAINER
+
+LABEL maintainer="Jupyter Project <jupyter@googlegroups.com>"
+
+USER root
+
+# RSpark config
+ENV R_LIBS_USER $SPARK_HOME/R/lib
+RUN fix-permissions $R_LIBS_USER
+
+# R pre-requisites
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    fonts-dejavu \
+    gfortran \
+    gcc && \
+    rm -rf /var/lib/apt/lists/*
+
+USER $NB_UID
+
+RUN conda install --quiet --yes \
+    'r-base=3.6.3' \
+    'r-ggplot2=3.3*' \
+    'r-irkernel=1.1*' \
+    'r-rcurl=1.98*' \
+    'r-sparklyr=1.2*' \
+    && \
+    conda clean --all -f -y && \
+    fix-permissions "${CONDA_DIR}" && \
+    fix-permissions "/home/${NB_USER}"
+
+# Apache Toree kernel
+# hadolint ignore=DL3013
+RUN pip install --no-cache-dir \
+    https://dist.apache.org/repos/dist/release/incubator/toree/0.3.0-incubating/toree-pip/toree-0.3.0.tar.gz \
+    && \
+    jupyter toree install --sys-prefix && \
+    rm -rf "/home/${NB_USER}/.local" && \
+    fix-permissions "${CONDA_DIR}" && \
+    fix-permissions "/home/${NB_USER}"
+
+# Spylon-kernel
+RUN conda install --quiet --yes 'spylon-kernel=0.4*' && \
+    conda clean --all -f -y && \
+    python -m spylon_kernel install --sys-prefix && \
+    rm -rf "/home/${NB_USER}/.local" && \
+    fix-permissions "${CONDA_DIR}" && \
+    fix-permissions "/home/${NB_USER}"
+
+USER root
+# install google chrome
+RUN apt-get update && apt-get install -y gnupg2
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+RUN apt-get -y update
+RUN apt-get install -y google-chrome-stable
+
+# install chromedriver
+RUN apt-get install -yqq unzip
+RUN wget -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`/chromedriver_linux64.zip
+RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/local/bin/
+
+# set display port to avoid crash
+ENV DISPLAY=:99
+
+# install selenium
+RUN pip install selenium==3.8.0
+# install konlpy
+RUN pip install konlpy
+CMD ["bash < curl -s https://raw.githubusercontent.com/konlpy/konlpy/master/scripts/mecab.sh"]
+RUN pip install pyspark
+RUN pip install gensim
+RUN pip install pyLDAvis

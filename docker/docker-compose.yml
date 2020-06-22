@@ -2,7 +2,7 @@ version: '3'
 
 services:
    spark:
-      image: jupyter/all-spark-notebook
+      image: gogopen85/all-spark-notebook:v0.1
       volumes: 
         - ../data:/home/jovyan/work
       ports:
