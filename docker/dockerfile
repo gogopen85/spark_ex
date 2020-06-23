@@ -70,7 +70,8 @@ ENV DISPLAY=:99
 RUN pip install selenium==3.8.0
 # install konlpy
 RUN pip install konlpy
-CMD ["bash < curl -s https://raw.githubusercontent.com/konlpy/konlpy/master/scripts/mecab.sh"]
+RUN curl -L https://raw.githubusercontent.com/konlpy/konlpy/master/scripts/mecab.sh | bash
+# CMD ["bash < curl -s https://raw.githubusercontent.com/konlpy/konlpy/master/scripts/mecab.sh"]
 RUN pip install pyspark
 RUN pip install gensim
 RUN pip install pyLDAvis
